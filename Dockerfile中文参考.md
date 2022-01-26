@@ -72,19 +72,18 @@ Docker 守护进程一个接一个地运行 Dockerfile 中的指令，如有必�
 
 ### buildkit (moby/buildkit)
 
-Starting with version 18.09, Docker supports a new backend for executing your builds that is provided by the [moby/buildkit](https://github.com/moby/buildkit) project. The BuildKit backend provides many benefits compared to the old implementation. For example, BuildKit can:
+从18.09版本开始，Docker支持一种新的后端来执行你的镜像构建，这个新的后端是 [moby/buildkit](https://github.com/moby/buildkit)项目。比于旧的实现，这个后端构建工具提供了非常多的新特性，列举如下：
 
-- Detect and skip executing unused build stages
-- Parallelize building independent build stages
-- Incrementally transfer only the changed files in your build context between builds
-- Detect and skip transferring unused files in your build context
+- 检测并跳过执行未使用的构建阶段
+- 并行构建独立的构建阶段
+- 在构建之间仅增量传输构建上下文中更改的文件
+- 在构建上下文中检测并跳过传输未使用的文件
 - Use external Dockerfile implementations with many new features
-- Avoid side-effects with rest of the API (intermediate images and containers)
-- Prioritize your build cache for automatic pruning
+- 使用外部 Dockerfile 实现了许多新特性
+- 避免 API 的其余部分（中间镜像和容器）产生副作用
+- 优先考虑构建缓存以进行自动缩减构建
 
-To use the BuildKit backend, you need to set an environment variable `DOCKER_BUILDKIT=1` on the CLI before invoking `docker build`.
+为了使用这个构建工具，你需要在调用`docker build`前给CLI设置`DOCKER_BUILDKIT=1` 的环境变量。
 
-To learn about the experimental Dockerfile syntax available to BuildKit-based builds [refer to the documentation in the BuildKit repository](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md).
-
-
+学习用于基于 BuildKit 镜像构建的 Dockerfile 语法学习可以[参阅文档](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md))。
 
