@@ -2,7 +2,7 @@ Docker可以通过从`Dockerfile`读取指令操作然后自动地构建镜像�
 
 这页文档主要是用来描述和解释用户可以在`Dockerfile`. 当你完成这页文档的阅读，可以参考这个 [Dockerfile最佳实践](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) 继续学习。
 
-### 用法
+### 1. 用法
 
 [docker build](https://docs.docker.com/engine/reference/commandline/build/) 的构建命令是从定义好的`Dockerfile`和上下文环境来构建容器镜像。构建中的上下文环境(context)主要是指一些文件的集合，文件的指向的可能是**直接本地文件系统路径**或者是**Git repo的URL链接**。
 
@@ -70,7 +70,7 @@ Docker 守护进程一个接一个地运行 Dockerfile 中的指令，如有必�
 
 
 
-### buildkit (moby/buildkit)
+### 2. buildkit (moby/buildkit)
 
 从18.09版本开始，Docker支持一种新的后端来执行你的镜像构建，这个新的后端是 [moby/buildkit](https://github.com/moby/buildkit)项目。比于旧的实现，这个后端构建工具提供了非常多的新特性，列举如下：
 
@@ -80,10 +80,73 @@ Docker 守护进程一个接一个地运行 Dockerfile 中的指令，如有必�
 - 在构建上下文中检测并跳过传输未使用的文件
 - Use external Dockerfile implementations with many new features
 - 使用外部 Dockerfile 实现了许多新特性
-- 避免 API 的其余部分（中间镜像和容器）产生副作用
+- 避免 API 的其余部分（中间镜像和容器）产生负面影响
 - 优先考虑构建缓存以进行自动缩减构建
 
 为了使用这个构建工具，你需要在调用`docker build`前给CLI设置`DOCKER_BUILDKIT=1` 的环境变量。
 
-学习用于基于 BuildKit 镜像构建的 Dockerfile 语法学习可以[参阅文档](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md))。
+学习用于基于 BuildKit 镜像构建的 Dockerfile 语法学习可以[参阅文档](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md)。
+
+
+
+### 3. 语法格式
+
+接下来是`Dockerfile`的语法格式：
+
+```shell
+# Comment
+INSTRUCTION arguments
+```
+
+`Dockerfile`中的命令大小写不敏感。但是，**约定是大写的**，以便更容易地将它们与参数区分开来。
+
+Docker按照顺序执行`Dockerfile`中的命令。`Dockerfile`必须使用`FROM`命令开头（执行逻辑上的原则）。实际上FROM命令也可能会排在[parser directives](https://docs.docker.com/engine/reference/builder/#parser-directives), [注释](https://docs.docker.com/engine/reference/builder/#format),以及全局的[ARGs](https://docs.docker.com/engine/reference/builder/#arg)后面。From命令用来指定使用哪个[基础镜像](https://docs.docker.com/glossary/#parent-image)来构建你的容器镜像。`FROM` 之前只能有一个或多个 `ARG` 指令，这些声明的参数在 `Dockerfile` 的 `FROM` 使用。
+
+Docker会把`#`开头的一行当作注释处理， 除非这一行是合法的[parser directive](https://docs.docker.com/engine/reference/builder/#parser-directives)。行中任何其他位置的`#`标记都被视为参数。 这允许以下语句：
+
+```shell
+# Comment
+RUN echo 'we are running some # of cool things'
+```
+
+注释行在执行 Dockerfile 指令之前被删除，这意味着下面示例中的注释不是由执行 `echo` 命令的 shell 处理的，下面两个示例是等价的：
+
+```shell
+RUN echo hello \
+# comment
+world
+```
+
+```shell
+RUN echo hello \
+world
+```
+
+注释中不支持换行符。
+
+>空格使用提醒：
+>
+>为了向后兼容，注释 (`#`) 和指令（如 `RUN`）之前的前导空格会被忽略，但不鼓励。 在这些情况下不保留前导空格，因此以下示例是等效的：
+>
+>```shell
+>        # this is a comment-line
+>    RUN echo hello
+>RUN echo world
+>```
+>
+>```shell
+># this is a comment-line
+>RUN echo hello
+>RUN echo world
+>```
+>
+>但是请注意，指令参数中的空格（例如 `RUN` 之后的命令）被保留，因此以下示例将打印 `hello world` 并指定前导空格：
+>
+>```shell
+>RUN echo "\
+>     hello\
+>     world"
+>```
+
+###  4. Parser directives
 
