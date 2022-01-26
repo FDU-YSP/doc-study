@@ -100,7 +100,7 @@ INSTRUCTION arguments
 
 `Dockerfile`中的命令大小写不敏感。但是，**约定是大写的**，以便更容易地将它们与参数区分开来。
 
-Docker按照顺序执行`Dockerfile`中的命令。`Dockerfile`必须使用`FROM`命令开头（执行逻辑上的原则）。实际上FROM命令也可能会排在[parser directives](https://docs.docker.com/engine/reference/builder/#parser-directives), [注释](https://docs.docker.com/engine/reference/builder/#format),以及全局的[ARGs](https://docs.docker.com/engine/reference/builder/#arg)后面。From命令用来指定使用哪个[基础镜像](https://docs.docker.com/glossary/#parent-image)来构建你的容器镜像。`FROM` 之前只能有一个或多个 `ARG` 指令，这些声明的参数在 `Dockerfile` 的 `FROM` 使用。
+Docker按照顺序执行`Dockerfile`中的命令。`Dockerfile`必须使用`FROM`命令开头（执行逻辑上的原则）。实际上FROM命令也可能会排在[parser directives](### 4. Parser directives), [注释](https://docs.docker.com/engine/reference/builder/#format),以及全局的[ARGs](https://docs.docker.com/engine/reference/builder/#arg)后面。From命令用来指定使用哪个[基础镜像](https://docs.docker.com/glossary/#parent-image)来构建你的容器镜像。`FROM` 之前只能有一个或多个 `ARG` 指令，这些声明的参数在 `Dockerfile` 的 `FROM` 使用。
 
 Docker会把`#`开头的一行当作注释处理， 除非这一行是合法的[parser directive](https://docs.docker.com/engine/reference/builder/#parser-directives)。行中任何其他位置的`#`标记都被视为参数。 这允许以下语句：
 
@@ -148,5 +148,91 @@ world
 >     world"
 >```
 
-###  4. Parser directives
+### 4. Parser directives
 
+Parser directives是可选的，会影响 `Dockerfile` 中后续行的处理方式。 Parser directives不会将层添加到构建中，并且不会显示为构建步骤。 Parser directives以`#directive=value`的形式写成一种特殊类型的注释。 一个指令只能使用一次。
+
+一旦处理了注释、空行或构建器指令，Docker 就不再寻找解析器指令。 相反，它将任何格式化为解析器指令的内容视为注释，并且不会尝试验证它是否可能是parser directive。 因此，所有parser directive都必须位于 `Dockerfile` 的最顶部。
+
+Parser directives are not case-sensitive. However, convention is for them to be lowercase. Convention is also to include a blank line following any parser directives. Line continuation characters are not supported in parser directives.
+
+Due to these rules, the following examples are all invalid:
+
+Invalid due to line continuation:
+
+```shell
+# direc \
+tive=value
+```
+
+Invalid due to appearing twice:
+
+```shell
+# directive=value1
+# directive=value2
+
+FROM ImageName
+```
+
+如果加在构建器指令之后，就会被视为注释：
+
+```shell
+FROM ImageName
+# directive=value
+```
+
+由于出现在不是解析器指令的注释之后，因此也会被视为注释：
+
+```shell
+# About my dockerfile
+# directive=value
+FROM ImageName
+```
+
+由于未被识别，未知指令被视为注释。 此外，由于出现在不是解析器指令的注释之后，已知指令被视为注释。
+
+```shell
+# unknowndirective=value
+# knowndirective=value
+```
+
+解析器指令中允许使用非换行空格。 因此，以下行都被同等对待：
+
+```shell
+#directive=value
+# directive =value
+#	      directive= value
+# directive = value
+#	        dIrEcTiVe=value
+```
+
+支持以下解析器指令：
+
++ `syntax`
++ `escape`
+
+#### 4.1 syntax
+
+```shell
+# syntax=[remote image reference]
+```
+
+举例：
+
+```shell
+# syntax=docker/dockerfile:1
+# syntax=docker.io/docker/dockerfile:1
+# syntax=example.com/user/repo:tag@sha256:abcdef...
+```
+
+This feature is only available when using the [BuildKit](https://docs.docker.com/engine/reference/builder/#buildkit) backend, and is ignored when using the classic builder backend.
+
+The syntax directive defines the location of the Dockerfile syntax that is used to build the Dockerfile. The BuildKit backend allows to seamlessly use external implementations that are distributed as Docker images and execute inside a container sandbox environment.
+
+Custom Dockerfile implementations allows you to:
+
+- Automatically get bugfixes without updating the Docker daemon
+- Make sure all users are using the same implementation to build your Dockerfile
+- Use the latest features without updating the Docker daemon
+- Try out new features or third-party features before they are integrated in the Docker daemon
+- Use [alternative build definitions, or create your own](https://github.com/moby/buildkit#exploring-llb)
