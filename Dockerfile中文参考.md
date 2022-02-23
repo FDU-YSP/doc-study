@@ -150,22 +150,22 @@ world
 
 ### 4. Parser directives
 
-Parser directives是可选的，会影响 `Dockerfile` 中后续行的处理方式。 Parser directives不会将层添加到构建中，并且不会显示为构建步骤。 Parser directives以`#directive=value`的形式写成一种特殊类型的注释。 一个指令只能使用一次。
+v是可选的，会影响 `Dockerfile` 中后续行的处理方式。 Parser directives不会将层添加到构建中，并且不会显示为构建步骤。 Parser directives以`#directive=value`的形式写成一种特殊类型的注释。 一个指令只能使用一次。
 
 一旦处理了注释、空行或构建器指令，Docker 就不再寻找解析器指令。 相反，它将任何格式化为解析器指令的内容视为注释，并且不会尝试验证它是否可能是parser directive。 因此，所有parser directive都必须位于 `Dockerfile` 的最顶部。
 
-Parser directives are not case-sensitive. However, convention is for them to be lowercase. Convention is also to include a blank line following any parser directives. Line continuation characters are not supported in parser directives.
+Parser directives不区分大小写。 但是，约定是小写的。 约定也是在任何解析器指令之后包含一个空行。 解析器指令不支持换行符。
 
-Due to these rules, the following examples are all invalid:
+由于这些规则，以下示例均无效：
 
-Invalid due to line continuation:
+换行无效：
 
 ```shell
 # direc \
 tive=value
 ```
 
-Invalid due to appearing twice:
+出现两次无效：
 
 ```shell
 # directive=value1
@@ -225,14 +225,38 @@ FROM ImageName
 # syntax=example.com/user/repo:tag@sha256:abcdef...
 ```
 
-This feature is only available when using the [BuildKit](https://docs.docker.com/engine/reference/builder/#buildkit) backend, and is ignored when using the classic builder backend.
+这些特性只有当使用[BuildKit](https://docs.docker.com/engine/reference/builder/#buildkit)做后端的时候才可用，如果使用以前的builder后端的话这些标记都会被忽略掉。
 
 The syntax directive defines the location of the Dockerfile syntax that is used to build the Dockerfile. The BuildKit backend allows to seamlessly use external implementations that are distributed as Docker images and execute inside a container sandbox environment.
 
+语法指令定义用于构建 Dockerfile 的 Dockerfile 语法的位置。 BuildKit 后端允许无缝使用外部实现作为分发的Docker 镜像并在容器沙箱环境中执行。
+
+用户Dockerfile实现允许：
+
 Custom Dockerfile implementations allows you to:
 
-- Automatically get bugfixes without updating the Docker daemon
-- Make sure all users are using the same implementation to build your Dockerfile
-- Use the latest features without updating the Docker daemon
-- Try out new features or third-party features before they are integrated in the Docker daemon
+- 在不更新 Docker daemon守护进程的情况下自动获取错误修复
+- 确保所有用户都使用相同的实现来构建您的 Dockerfile
+- 无需更新 Docker daemon守护进程可使用最新功能
+- 在将新功能或第三方功能集成到 Docker daemon守护进程之前试用它们
 - Use [alternative build definitions, or create your own](https://github.com/moby/buildkit#exploring-llb)
+
+
+
+### Official releases
+
+Docker distributes official versions of the images that can be used for building Dockerfiles under `docker/dockerfile` repository on Docker Hub. There are two channels where new images are released: `stable` and `labs`.
+
+Docker 分发官方版本的镜像，作为用于构建的Dockerfile存在 Docker Hub 上的 `docker/dockerfile` 存储库下。 有两个发布新镜像的渠道：`stable` 和 `labs`。
+
+Stable channel follows [semantic versioning](https://semver.org/). For example:
+
+stable渠道遵循[语义版本控制](https://semver.org/)。举例：
+
+- `docker/dockerfile:1` - kept updated with the latest `1.x.x` minor *and* patch release
+- `docker/dockerfile:1.2` - kept updated with the latest `1.2.x` patch release, and stops receiving updates once version `1.3.0` is released.
+- `docker/dockerfile:1.2.1` - immutable: never updated
+
+We recommend using `docker/dockerfile:1`, which always points to the latest stable release of the version 1 syntax, and receives both “minor” and “patch” updates for the version 1 release cycle. BuildKit automatically checks for updates of the syntax when performing a build, making sure you are using the most current version.
+
+If a specific version is used, such as `1.2` or `1.2.1`, the Dockerfile needs to be updated manually to continue receiving bugfixes and new features. Old versions of the Dockerfile remain compatible with the new versions of the builder.
